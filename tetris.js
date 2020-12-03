@@ -1,27 +1,30 @@
 
+
+
+// models  =========================================
+
+const figures = [
+    square,
+    line,
+    elle,
+    barre    
+] = [
+    "**-**-",
+    "*--*--*--",
+    "****--",
+    "-*-***",
+].reduce((all,figure) => {
+    return all.concat([figure.split('').reduce((F,chunck,i) => {
+        if(chunck !== '*') return F.concat(null)
+        let y = Math.floor(i / 3)
+        let x = i - (y * 3)
+        return F.concat(cell(x,y))
+    },[])])
+},[])
+
+
+
 // game =========================================
-
-function Game() {
-
-    return {
-        init
-    }
-}
-
-function init() {
-    square  
-}
-
-function play() {
-    document.addEventListener(
-        "keydown",
-        ({ keyCode }) => {
-            if (![37, 38, 39, 40].includes(keyCode)) return
-            Snake.turn(keyCode - 37)
-        },
-        { once: true }
-    )
-}
 
 // utils ===================================
 
@@ -80,28 +83,6 @@ function equals({ x: ax, y: ay }, { x: bx, y: by }) {
 function isIn(line, point) {
     return line.some((part) => equals(part, point))
 }
-
-// models  =========================================
-
-const Block = function (i = Math.round(Math.random() * 4)) {
-        let fig = figures[i].split('')
-            .map((char,i) => {
-                if(char === '*') return
-            })
-            .join('')
-}
-
-const figures = [
-    square,
-    line,
-    elle,
-    barre    
-] = [
-    "**\n**\n",
-    "*\n*\n*\n*\n",
-    "***\n*\n",
-    "\s*\s\n***\n",
-]
 
 // run ===================================
 
