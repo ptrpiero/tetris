@@ -3,6 +3,13 @@
 
 // models  =========================================
 
+const colors = [
+    'red',
+    'green',
+    'blue',
+    'yellow'
+]
+
 const figures = [
     square,
     line,
@@ -18,11 +25,24 @@ const figures = [
         if(chunck !== '*') return F.concat(null)
         let y = Math.floor(i / 3)
         let x = i - (y * 3)
-        return F.concat(cell(x,y))
+        return F.concat({x,y})
     },[])])
 },[])
 
-
+const Block = function (
+    color = colors[random()],
+    figure = figures[random()],
+    start = coordinates(cell('?',0))
+){
+    return {
+        render:() => figure.forEach(p => {
+            if(!p) return
+            p.x += start.x
+            p.y += start.y
+            render(color,cell(p.x,p.y))
+        })
+    }
+}
 
 // game =========================================
 
@@ -82,6 +102,10 @@ function equals({ x: ax, y: ay }, { x: bx, y: by }) {
 
 function isIn(line, point) {
     return line.some((part) => equals(part, point))
+}
+
+function random(i = 4) {
+    return Math.floor(Math.random() * i)
 }
 
 // run ===================================
