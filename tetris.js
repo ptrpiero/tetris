@@ -16,18 +16,21 @@ const figures = [
     elle,
     barre    
 ] = [
-    "**-**-",
-    "*--*--*--",
-    "****--",
+    "**-**",
+    "*--*--*",
+    "****",
     "-*-***",
-].reduce((all,figure) => {
-    return all.concat([figure.split('').reduce((F,chunck,i) => {
-        if(chunck !== '*') return F.concat(null)
-        let y = Math.floor(i / 3)
-        let x = i - (y * 3)
-        return F.concat({x,y})
-    },[])])
-},[])
+].map(figure => {
+    return figure
+        .split('')
+        .map((chunck,i) => {
+            if(chunck !== '*') return
+            let y = Math.floor(i / 3)
+            let x = i - (y * 3)
+            return {x,y}
+        })
+        .filter(v => v)
+})
 
 const Block = function (
     color = colors[random()],
