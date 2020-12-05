@@ -11,17 +11,16 @@ const colors = [
 ]
 
 const figures = [
-    square,
-    line,
-    elle,
-    barre    
+    _square,
+    _line,
+    _elle,
+    _barre    
 ] = [
     "**-**",
     "*--*--*",
     "****",
     "-*-***",
-].map(figure => {
-    return figure
+].map(figure => figure
         .split('')
         .map((chunck,i) => {
             if(chunck !== '*') return
@@ -30,21 +29,39 @@ const figures = [
             return {x,y}
         })
         .filter(v => v)
-})
+    )
 
 const Block = function (
     color = colors[random()],
     figure = figures[random()],
-    start = coordinates(cell('?',0))
+    head = coordinates(cell('?',0))
 ){
     return {
+        color: () => color,
+        figure: () => figure,
+        head: () => head,
         render:() => figure.forEach(p => {
             if(!p) return
-            p.x += start.x
-            p.y += start.y
+            p.x += head.x
+            p.y += head.y
             render(color,cell(p.x,p.y))
-        })
+        }),
+        fall: () => figure = figure.map(p => shift(p, 'down')),
+        move: (where) => figure = move(figure,where)
     }
+}
+
+function move(figure,where) {
+    switch (where) {
+        case 'right':
+        case 'left':
+        case 'down':
+                figure = figure.map(p => shift(p,where))            
+            break;
+        default:
+            break;
+    }
+    return figure
 }
 
 // game =========================================
@@ -77,7 +94,7 @@ function coordinates({ x, y }) {
 }
 
 const directions = (function (directions = {}) {
-    ['left', 'up', 'rigth', 'down'].forEach((direction, i) => {
+    ['left', 'up', 'right', 'down'].forEach((direction, i) => {
         directions[direction] = i
         directions[i] = direction
     })
@@ -87,7 +104,7 @@ const directions = (function (directions = {}) {
 function shift({ x, y }, direction, i = 1) {
     if (direction === directions[0]) return { x: x - i, y } // left
     if (direction === directions[1]) return { x, y: y - i } // up
-    if (direction === directions[2]) return { x: x + i, y } // rigth
+    if (direction === directions[2]) return { x: x + i, y } // right
     if (direction === directions[3]) return { x, y: y + i } // down
 }
 
