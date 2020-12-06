@@ -1,5 +1,11 @@
 
+// game =========================================
 
+const Game = (function () {
+    return {
+        init: () => {}
+    }
+})()
 
 // models  =========================================
 
@@ -21,15 +27,14 @@ const figures = [
     "****",
     "-*-***",
 ].map(figure => figure
-        .split('')
-        .map((chunck,i) => {
-            if(chunck !== '*') return
-            let y = Math.floor(i / 3)
-            let x = i - (y * 3)
-            return {x,y}
-        })
-        .filter(v => !!v)
-    )
+    .split('')
+    .map((chunck,i) => {
+        if(chunck !== '*') return
+        let y = Math.floor(i / 3)
+        let x = i - (y * 3)
+        return {x,y}
+    })
+    .filter(v => !!v))
 
 const Block = function (
     color = colors[random()],
@@ -54,11 +59,15 @@ const Block = function (
 // Block private methods ===============================
 
 function move(figure,where,head) {
+    let _figure = []
     switch (where) {
         case 'right':
         case 'left':
         case 'down':
-                _figure = figure.map(p => shift(p,where))            
+            _figure = figure.map(p => shift(p,where))            
+            break;
+        case 'up':
+            _figure = transform(figure)
             break;
         default:
             break;
@@ -75,7 +84,10 @@ function inBorders(figure,head) {
     })
 }
 
-// game =========================================
+function transform(figure) {
+    console.log('turn me up!')
+    return figure
+}
 
 // utils ===================================
 
@@ -117,14 +129,6 @@ function shift({ x, y }, direction, i = 1) {
     if (direction === directions[3]) return { x, y: y + i } // down
 }
 
-function place({ x, y }, max = Math.floor(width / length) - 1) {
-    if (x < 0) x = max
-    if (y < 0) y = max
-    if (x > max) x = 0
-    if (y > max) y = 0
-    return { x, y, } = cell(x, y)
-}
-
 function equals({ x: ax, y: ay }, { x: bx, y: by }) {
     return ax === bx && ay === by
 }
@@ -139,7 +143,7 @@ function random(i = 4) {
 
 // run ===================================
 
-// Game.init()
+Game.init()
 
 
 
