@@ -28,7 +28,7 @@ const figures = [
             let x = i - (y * 3)
             return {x,y}
         })
-        .filter(v => v)
+        .filter(v => !!v)
     )
 
 const Block = function (
@@ -42,9 +42,9 @@ const Block = function (
         head: () => head,
         render:() => figure.forEach(p => {
             if(!p) return
-            p.x += head.x
-            p.y += head.y
-            render(color,cell(p.x,p.y))
+            let x = p.x + head.x
+            let y = p.y + head.y
+            render(color,cell(x,y))
         }),
         fall: () => figure = figure.map(p => shift(p, 'down')),
         move: (where) => figure = move(figure,where)
@@ -102,9 +102,9 @@ const directions = (function (directions = {}) {
 })()
 
 function shift({ x, y }, direction, i = 1) {
-    if (direction === directions[0]) return { x: x - i, y } // left
+    if (direction === directions[0]) return { x: x + i, y } // left
     if (direction === directions[1]) return { x, y: y - i } // up
-    if (direction === directions[2]) return { x: x + i, y } // right
+    if (direction === directions[2]) return { x: x - i, y } // right
     if (direction === directions[3]) return { x, y: y + i } // down
 }
 
