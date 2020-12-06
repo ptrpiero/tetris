@@ -47,21 +47,32 @@ const Block = function (
             render(color,cell(x,y))
         }),
         fall: () => figure = figure.map(p => shift(p, 'down')),
-        move: (where) => figure = move(figure,where)
+        move: (where) => figure = move(figure,where,head)
     }
 }
 
-function move(figure,where) {
+// Block private methods ===============================
+
+function move(figure,where,head) {
     switch (where) {
         case 'right':
         case 'left':
         case 'down':
-                figure = figure.map(p => shift(p,where))            
+                _figure = figure.map(p => shift(p,where))            
             break;
         default:
             break;
     }
-    return figure
+    return inBorders(_figure,head) ? figure = _figure : figure
+}
+
+
+function inBorders(figure,head) {
+    return figure.every(p => {
+        let {x,y} = cell(p.x + head.x,p.y + head.y)
+        return x + length <= width && x >= 0
+            && y + length <= width && y >= 0
+    })
 }
 
 // game =========================================
@@ -100,9 +111,9 @@ const directions = (function (directions = {}) {
 })()
 
 function shift({ x, y }, direction, i = 1) {
-    if (direction === directions[0]) return { x: x + i, y } // left
+    if (direction === directions[0]) return { x: x - i, y } // left
     if (direction === directions[1]) return { x, y: y - i } // up
-    if (direction === directions[2]) return { x: x - i, y } // right
+    if (direction === directions[2]) return { x: x + i, y } // right
     if (direction === directions[3]) return { x, y: y + i } // down
 }
 
