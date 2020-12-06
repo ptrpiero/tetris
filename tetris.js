@@ -75,13 +75,11 @@ function render(color = 'white', { x, y, l } = { x: 0, y: 0, l: width }) {
 }
 
 function cell(x, y) {
+    let randomXy = random(width / length)
+    if(randomXy + 3 > (width / length)) return cell(x,y)
     return {
-        x: isNaN(x) ?
-            Math.floor(Math.random() * width / length) * length :
-            x * length,
-        y: isNaN(y) ?
-            Math.floor(Math.random() * width / length) * length :
-            y * length,
+        x: isNaN(x) ? randomXy * length : x * length,
+        y: isNaN(y) ? randomXy * length : y * length,
         l: length
     }
 }
