@@ -1,11 +1,11 @@
 
 // game =========================================
 
-const Game = (function () {
+function Game () {
     return {
         init: () => {}
     }
-})()
+}
 
 // models  =========================================
 
@@ -36,13 +36,12 @@ const figures = [
     })
     .filter(v => !!v))
 
-const Block = function (
+function Block (
     color = colors[random()],
     figure = figures[random()],
     head = coordinates(cell('?',0))
 ){
     return {
-        color: () => color,
         figure: () => figure,
         head: () => head,
         render:() => figure.forEach(p => {
@@ -51,8 +50,7 @@ const Block = function (
             let y = p.y + head.y
             render(color,cell(x,y))
         }),
-        fall: () => figure = figure.map(p => shift(p, 'down')),
-        move: (where) => figure = move(figure,where,head)
+        move: (where) => figure = move(figure,where,head),
     }
 }
 
@@ -85,8 +83,11 @@ function inBorders(figure,head) {
 }
 
 function transform(figure) {
-    console.log('turn me up!')
-    return figure
+        return figure.map(p => {
+            let y = p.x
+            let x = p.y
+            return {x,y}
+        })
 }
 
 // utils ===================================
@@ -143,7 +144,7 @@ function random(i = 4) {
 
 // run ===================================
 
-Game.init()
+Game().init()
 
 
 
