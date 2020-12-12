@@ -74,8 +74,8 @@ function Block (){
 function inBorders(figure,head) {
     return figure.every(p => {
         let {x,y} = cell(p.x + head.x,p.y + head.y)
-        return x + length <= width && x >= 0
-            && y + length <= width && y >= 0
+        return x >= 0 && x + length <= width
+            && y >= 0 && y + length <= height
     })
 }
 
