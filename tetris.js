@@ -29,7 +29,7 @@ const figures = [
     _z,
 ] = [
     "**-**",
-    "*--*--*",
+    "*--*--*--*",
     "****",
     "-*-***",
     "-****-",
@@ -138,7 +138,7 @@ function isIn(line, point) {
     return line.some((part) => equals(part, point))
 }
 
-function random(i = 4) {
+function random(i = 7) {
     return Math.floor(Math.random() * i)
 }
 
