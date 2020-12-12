@@ -10,22 +10,31 @@ function Game () {
 // models  =========================================
 
 const colors = [
-    'red',
+    'yellow',
+    'cyan',
+    'orange',
+    'purple',
     'green',
     'blue',
-    'yellow'
+    'red'
 ]
 
 const figures = [
-    _square,
-    _line,
-    _elle,
-    _barre    
+    _o,
+    _i,
+    _l,
+    _t,
+    _s,
+    _j,
+    _z,
 ] = [
     "**-**",
     "*--*--*",
     "****",
     "-*-***",
+    "-****-",
+    "**--**",
+    "--****"
 ].map(figure => figure
     .split('')
     .map((chunck,i) => {
@@ -36,43 +45,31 @@ const figures = [
     })
     .filter(v => !!v))
 
-function Block (
-    color = colors[random()],
-    figure = figures[random()],
-    head = coordinates(cell('?',0))
-){
+function Block (){
+    let figure = figures[random()]
+    let color = colors[figures.indexOf(figure)]
+    let head = coordinates(cell('?',0))
     return {
-        figure: () => figure,
-        head: () => head,
-        render:() => figure.forEach(p => {
-            if(!p) return
-            let x = p.x + head.x
-            let y = p.y + head.y
-            render(color,cell(x,y))
-        }),
-        move: (where) => figure = move(figure,where,head),
+        render: function () {
+            figure.forEach(p => {
+                if(!p) return
+                let x = p.x + head.x
+                let y = p.y + head.y
+                render(color,cell(x,y))
+            })
+        },
+        move: function (where) {
+            let _figure = where == 'up' ? transform(figure) : figure
+            let _head = where == 'up' ? head : shift(head,where)
+            if(inBorders(_figure,_head)){
+                figure = _figure
+                head = _head
+            }
+        }
     }
 }
 
 // Block private methods ===============================
-
-function move(figure,where,head) {
-    let _figure = []
-    switch (where) {
-        case 'right':
-        case 'left':
-        case 'down':
-            _figure = figure.map(p => shift(p,where))            
-            break;
-        case 'up':
-            _figure = transform(figure)
-            break;
-        default:
-            break;
-    }
-    return inBorders(_figure,head) ? figure = _figure : figure
-}
-
 
 function inBorders(figure,head) {
     return figure.every(p => {
@@ -84,8 +81,8 @@ function inBorders(figure,head) {
 
 function transform(figure) {
         return figure.map(p => {
-            let y = p.x
             let x = p.y
+            let y = -p.x
             return {x,y}
         })
 }
