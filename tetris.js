@@ -50,12 +50,12 @@ function Block (){
     let color = colors[figures.indexOf(figure)]
     let head = coordinates(cell('?',0))
     return {
-        render: function () {
+        render: function (_color) {
             figure.forEach(p => {
                 if(!p) return
                 let x = p.x + head.x
                 let y = p.y + head.y
-                render(color,cell(x,y))
+                render(_color || color,cell(x,y))
             })
         },
         move: function (where) {
@@ -69,7 +69,7 @@ function Block (){
     }
 }
 
-// Block private methods ===============================
+// utils ===================================
 
 function inBorders(figure,head) {
     return figure.every(p => {
@@ -86,8 +86,6 @@ function transform(figure) {
             return {x,y}
         })
 }
-
-// utils ===================================
 
 function render(color = 'white', { x, y, l } = { x: 0, y: 0, l: width }) {
     const canvas = document.getElementById('board').getContext('2d')
