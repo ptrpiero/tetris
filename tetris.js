@@ -47,7 +47,7 @@ const figures = [
 const Memory = (function () {
     let _memory = {}
     return {
-        push:function(figure,head,color) {
+        push: function (figure,head,color) {
             figure.forEach(p => {
                 let x = parseInt(p.x + head.x)
                 let y = parseInt(p.y + head.y)
@@ -59,7 +59,7 @@ const Memory = (function () {
                 }
             })
         },
-        clean:function(){
+        clean: function () {
             let lines = []
             Object.keys(_memory).forEach(y => {
                 if(isFull(y)){
@@ -71,6 +71,9 @@ const Memory = (function () {
             })
             lines.forEach(y => delete _memory[y])
             return lines
+        },
+        fall: function () {
+
         },
         get:() => _memory
     }
