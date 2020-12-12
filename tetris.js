@@ -55,7 +55,8 @@ function Block (){
                 if(!p) return
                 let x = p.x + head.x
                 let y = p.y + head.y
-                render(_color || color,cell(x,y))
+                let stroke = !_color ? true : false
+                render(_color || color,cell(x,y),stroke)
             })
         },
         move: function (where) {
@@ -87,10 +88,14 @@ function transform(figure) {
         })
 }
 
-function render(color = 'white', { x, y, l } = { x: 0, y: 0, l: width }) {
+function render(color = 'white', { x, y, l } = { x: 0, y: 0, l: width },stroke) {
     const canvas = document.getElementById('board').getContext('2d')
     canvas.fillStyle = color
     canvas.fillRect(x, y, l, l)
+    if(stroke){
+        canvas.strokeStyle = "rgba(105,105,105)"
+        canvas.strokeRect(x+1, y+1, l-2, l-2)
+        }
 }
 
 function cell(x, y) {
