@@ -97,8 +97,8 @@ function Block (){
             })
         },
         move: function (where) {
-            let _figure = where == 'up' ? transform(figure) : figure
-            let _head = where == 'up' ? head : shift(head,where)
+            let _figure = where === 'up' ? transform(figure) : figure
+            let _head = where === 'up' ? head : shift(head,where)
             if(inBorders(_figure,_head)){
                 figure = _figure
                 head = _head
