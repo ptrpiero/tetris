@@ -1,5 +1,4 @@
-
-// game =========================================
+// game =======================================================================
 
 function Game () {
     return {
@@ -7,7 +6,7 @@ function Game () {
     }
 }
 
-// models  =========================================
+// models  ====================================================================
 
 const colors = [
     'yellow',
@@ -45,10 +44,48 @@ const figures = [
     })
     .filter(v => !!v))
 
+const Memory = (function () {
+    let _memory = {}
+    return {
+        push:function(figure,head,color) {
+            figure.forEach(p => {
+                let x = parseInt(p.x + head.x)
+                let y = parseInt(p.y + head.y)
+                if(!_memory[y]){
+                    _memory[y] = []
+                }
+                if(!_memory[y].some(p => p.x === x)){
+                    _memory[y].push({x,y,color})
+                }
+            })
+        },
+        clean:function(){
+            let lines = []
+            Object.keys(_memory).forEach(y => {
+                if(isFull(y)){
+                    lines.push(y)
+                    _memory[y].forEach(p => {
+                        render('white',cell(p.x,p.y))
+                    })
+                }
+            })
+            lines.forEach(y => delete _memory[y])
+            return lines
+        },
+        get:() => _memory
+    }
+    function isFull(line){
+        return _memory[line]
+            && _memory[line].length > 0
+            && _memory[line].length >= width / length
+    }
+})()
+
 function Block (){
     let figure = figures[random()]
     let color = colors[figures.indexOf(figure)]
     let head = coordinates(cell('?',0))
+    Memory.push(figure,head,color)
     return {
         render: function (_color) {
             figure.forEach(p => {
@@ -65,12 +102,13 @@ function Block (){
             if(inBorders(_figure,_head)){
                 figure = _figure
                 head = _head
+                Memory.push(figure,head,color)
             }
         }
     }
 }
 
-// utils ===================================
+// utils ======================================================================
 
 function inBorders(figure,head) {
     return figure.every(p => {
@@ -88,7 +126,11 @@ function transform(figure) {
         })
 }
 
-function render(color = 'white', { x, y, l } = { x: 0, y: 0, l: width },stroke) {
+function render(
+        color = 'white',
+        { x, y, l } = { x: 0, y: 0, l: length },
+        stroke
+    ) {
     const canvas = document.getElementById('board').getContext('2d')
     canvas.fillStyle = color
     canvas.fillRect(x, y, l, l)
@@ -142,7 +184,7 @@ function random(i = 7) {
     return Math.floor(Math.random() * i)
 }
 
-// run ===================================
+// run ========================================================================
 
 Game().init()
 
