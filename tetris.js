@@ -44,43 +44,55 @@ const figures = [
     })
     .filter(v => !!v))
 
-const Memory = (function () {
-    let _memory = {}
+const Memory = (function (rows = height / length) {
+    memory = {}
+    while(rows >= 0){
+        memory[rows] = []
+        rows--
+    }
     return {
-        push: function (figure,head,color) {
-            figure.forEach(p => {
-                let x = parseInt(p.x + head.x)
-                let y = parseInt(p.y + head.y)
-                if(!_memory[y]){
-                    _memory[y] = []
-                }
-                if(!_memory[y].some(p => p.x === x)){
-                    _memory[y].push({x,y,color})
-                }
+        push: function (block) {
+            block.figure.forEach(p => {
+                let x = parseInt(p.x + block.head.x)
+                let y = parseInt(p.y + block.head.y)
+                let color = block.color
+                memory[y].push({x,y,color})
             })
         },
         clean: function () {
             let lines = []
-            Object.keys(_memory).forEach(y => {
+            Object.keys(memory).forEach(y => {
                 if(isFull(y)){
                     lines.push(y)
-                    _memory[y].forEach(p => {
+                    memory[y].forEach(p => {
                         render('white',cell(p.x,p.y))
                     })
                 }
             })
-            lines.forEach(y => delete _memory[y])
-            return lines
+            lines.forEach(y => memory[y] = [])
+            return lines.sort((a,b) => b-a)
         },
-        fall: function () {
-
+        fall: function (line) {
+            Object.keys(memory).filter(y => y<line)
+                .sort((a,b) => b-a)
+                .forEach((y) => {
+                    memory[y].forEach(p => {
+                        render('white',cell(p.x,p.y))
+                        p.y += 1
+                        render(p.color,cell(p.x,p.y),true)
+                        memory[parseInt(y)+1].push(p)
+                    })
+                    memory[y] = []
+                })
         },
-        get:() => _memory
+        get:() => memory
     }
     function isFull(line){
-        return _memory[line]
-            && _memory[line].length > 0
-            && _memory[line].length >= width / length
+        return memory[line].length >= width / length
+    }
+
+    function isEmpry(line) {
+        return memory[line].length == 0
     }
 })()
 
@@ -88,8 +100,9 @@ function Block (){
     let figure = figures[random()]
     let color = colors[figures.indexOf(figure)]
     let head = coordinates(cell('?',0))
-    Memory.push(figure,head,color)
+    Memory.push({figure,head,color})
     return {
+        get:() => {figure,head,color},
         render: function (_color) {
             figure.forEach(p => {
                 if(!p) return
@@ -105,7 +118,7 @@ function Block (){
             if(inBorders(_figure,_head)){
                 figure = _figure
                 head = _head
-                Memory.push(figure,head,color)
+                Memory.push({figure,head,color})
             }
         }
     }
