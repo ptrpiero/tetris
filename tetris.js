@@ -2,7 +2,7 @@
 
 function Game () {
     return {
-        init: () => {}
+        init: () => Memory() // TODO
     }
 }
 
@@ -22,7 +22,7 @@ function listen(block){
 
 // modules  ===================================================================
 
-const Memory = (function (rows = height / length) {
+function Memory (rows = height / length) {
     memory = {}
     while(rows >= 0){
         memory[rows] = []
@@ -64,7 +64,7 @@ const Memory = (function (rows = height / length) {
         return memory[line].length >= width / length
     }
 
-})()
+}
 
 // models  ====================================================================
 
