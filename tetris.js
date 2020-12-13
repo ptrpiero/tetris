@@ -6,6 +6,20 @@ function Game () {
     }
 }
 
+// listeners  =================================================================
+
+function listen(block){
+    document.addEventListener(
+        "keydown",
+        ({ code }) => {
+            if (!code.includes('Arrow')) return
+            block.render('white')
+            block.move(code.replace('Arrow','').toLocaleLowerCase())
+            block.render()
+        },
+    )
+}
+
 // modules  ===================================================================
 
 const Memory = (function (rows = height / length) {
@@ -58,10 +72,10 @@ function Block (){
     let figure = figures[random()]
     let head = coordinates(cell('?',0))
     return {
-        get: function () {
-            return figure.map(p => new Object({
-                x:p.x+head.x,
-                y:p.y+head.y,
+        get: function (_figure = figure, _head = head) {
+            return _figure.map(p => new Object({
+                x:p.x+_head.x,
+                y:p.y+_head.y,
                 color:p.color
             }))
         },
@@ -75,7 +89,7 @@ function Block (){
         move: function (where) {
             let _figure = where === 'up' ? transform(figure) : figure
             let _head = where === 'up' ? head : shift(head,where)
-            if(inBorders(this.get())){
+            if(inBorders(this.get(_figure,_head))){
                 figure = _figure
                 head = _head
             }
@@ -105,7 +119,8 @@ const figures = [
 // utils ======================================================================
 
 function inBorders(figure) {
-    return figure.every(({x,y}) => {
+    return figure.every(p => {
+        let {x,y} = cell(p.x,p.y)
         return x >= 0 && x + length <= width
             && y >= 0 && y + length <= height
     })
@@ -115,7 +130,7 @@ function transform(figure) {
         return figure.map(p => {
             let x = p.y
             let y = -p.x
-            return {x,y}
+            return {x,y,color:p.color}
         })
 }
 
@@ -150,19 +165,11 @@ function coordinates({ x, y }) {
     }
 }
 
-const directions = (function (directions = {}) {
-    ['left', 'up', 'right', 'down'].forEach((direction, i) => {
-        directions[direction] = i
-        directions[i] = direction
-    })
-    return directions
-})()
-
 function shift({ x, y }, direction, i = 1) {
-    if (direction === directions[0]) return { x: x - i, y } // left
-    if (direction === directions[1]) return { x, y: y - i } // up
-    if (direction === directions[2]) return { x: x + i, y } // right
-    if (direction === directions[3]) return { x, y: y + i } // down
+    if (direction === 'left')   return { x: x - i, y }
+    if (direction === 'up')     return { x, y: y - i }
+    if (direction === 'right')  return { x: x + i, y }
+    if (direction === 'down')   return { x, y: y + i }
 }
 
 function random(i = figures.length) {
