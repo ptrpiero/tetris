@@ -6,7 +6,7 @@ function Game () {
     }
 }
 
-// models  ====================================================================
+// modules  ===================================================================
 
 const Memory = (function (rows = height / length) {
     memory = {}
@@ -16,18 +16,13 @@ const Memory = (function (rows = height / length) {
     }
     return {
         push: function (block) {
-            block.figure.forEach(p => {
-                let x = parseInt(p.x + block.head.x)
-                let y = parseInt(p.y + block.head.y)
-                let color = block.color
-                memory[y].push({x,y,color})
-            })
+            block.forEach(p => memory[p.y].push(p))
         },
         clean: function () {
             let lines = []
             Object.keys(memory).forEach(y => {
                 if(isFull(y)){
-                    lines.push(y)
+                    lines.push(parseInt(y))
                     memory[y].forEach(p => {
                         render('white',cell(p.x,p.y))
                     })
@@ -57,75 +52,60 @@ const Memory = (function (rows = height / length) {
 
 })()
 
+// models  ====================================================================
+
 function Block (){
     let figure = figures[random()]
-    let color = colors[figures.indexOf(figure)]
     let head = coordinates(cell('?',0))
-    Memory.push({figure,head,color})
     return {
-        get:() => {figure,head,color},
-        render: function (_color) {
-            figure.forEach(p => {
+        get: function () {
+            return figure.map(p => new Object({
+                x:p.x+head.x,
+                y:p.y+head.y,
+                color:p.color
+            }))
+        },
+        render: function (color) {
+            this.get().forEach(p => {
                 if(!p) return
-                let x = p.x + head.x
-                let y = p.y + head.y
-                let stroke = !_color ? true : false
-                render(_color || color,cell(x,y),stroke)
+                let stroke = !color ? true : false
+                render(color || p.color,cell(p.x,p.y),stroke)
             })
         },
         move: function (where) {
             let _figure = where === 'up' ? transform(figure) : figure
             let _head = where === 'up' ? head : shift(head,where)
-            if(inBorders(_figure,_head)){
+            if(inBorders(this.get())){
                 figure = _figure
                 head = _head
-                Memory.push({figure,head,color})
             }
         }
     }
 }
 
-const colors = [
-    'yellow',
-    'cyan',
-    'orange',
-    'purple',
-    'green',
-    'blue',
-    'red'
-]
-
 const figures = [
-    _o,
-    _i,
-    _l,
-    _t,
-    _s,
-    _j,
-    _z,
-] = [
-    "**-**",
-    "*--*--*--*",
-    "****",
-    "-*-***",
-    "-****-",
-    "**--**",
-    "--****"
-].map(figure => figure
+    {path:'**-**',color:'yellow'},      // O
+    {path:'*--*--*--*',color:'cyan'},   // I
+    {path:'****',color:'orange'},       // L
+    {path:'-*-***',color:'purple'},     // T
+    {path:'-****-',color:'green'},      // Z
+    {path:'**--**',color:'blue'},       // S
+    {path:'--****',color:'red'}         // J
+].map(figure => figure.path
     .split('')
     .map((chunck,i) => {
         if(chunck !== '*') return
         let y = Math.floor(i / 3)
         let x = i - (y * 3)
-        return {x,y}
+        let color = figure.color
+        return {x,y,color}
     })
     .filter(v => !!v))
 
 // utils ======================================================================
 
-function inBorders(figure,head) {
-    return figure.every(p => {
-        let {x,y} = cell(p.x + head.x,p.y + head.y)
+function inBorders(figure) {
+    return figure.every(({x,y}) => {
         return x >= 0 && x + length <= width
             && y >= 0 && y + length <= height
     })
@@ -185,7 +165,7 @@ function shift({ x, y }, direction, i = 1) {
     if (direction === directions[3]) return { x, y: y + i } // down
 }
 
-function random(i = 7) {
+function random(i = figures.length) {
     return Math.floor(Math.random() * i)
 }
 
