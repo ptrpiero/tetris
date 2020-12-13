@@ -8,42 +8,6 @@ function Game () {
 
 // models  ====================================================================
 
-const colors = [
-    'yellow',
-    'cyan',
-    'orange',
-    'purple',
-    'green',
-    'blue',
-    'red'
-]
-
-const figures = [
-    _o,
-    _i,
-    _l,
-    _t,
-    _s,
-    _j,
-    _z,
-] = [
-    "**-**",
-    "*--*--*--*",
-    "****",
-    "-*-***",
-    "-****-",
-    "**--**",
-    "--****"
-].map(figure => figure
-    .split('')
-    .map((chunck,i) => {
-        if(chunck !== '*') return
-        let y = Math.floor(i / 3)
-        let x = i - (y * 3)
-        return {x,y}
-    })
-    .filter(v => !!v))
-
 const Memory = (function (rows = height / length) {
     memory = {}
     while(rows >= 0){
@@ -91,9 +55,6 @@ const Memory = (function (rows = height / length) {
         return memory[line].length >= width / length
     }
 
-    function isEmpry(line) {
-        return memory[line].length == 0
-    }
 })()
 
 function Block (){
@@ -124,6 +85,42 @@ function Block (){
     }
 }
 
+const colors = [
+    'yellow',
+    'cyan',
+    'orange',
+    'purple',
+    'green',
+    'blue',
+    'red'
+]
+
+const figures = [
+    _o,
+    _i,
+    _l,
+    _t,
+    _s,
+    _j,
+    _z,
+] = [
+    "**-**",
+    "*--*--*--*",
+    "****",
+    "-*-***",
+    "-****-",
+    "**--**",
+    "--****"
+].map(figure => figure
+    .split('')
+    .map((chunck,i) => {
+        if(chunck !== '*') return
+        let y = Math.floor(i / 3)
+        let x = i - (y * 3)
+        return {x,y}
+    })
+    .filter(v => !!v))
+
 // utils ======================================================================
 
 function inBorders(figure,head) {
@@ -153,7 +150,7 @@ function render(
     if(stroke){
         canvas.strokeStyle = "rgba(105,105,105)"
         canvas.strokeRect(x+1, y+1, l-2, l-2)
-        }
+    }
 }
 
 function cell(x, y) {
@@ -186,14 +183,6 @@ function shift({ x, y }, direction, i = 1) {
     if (direction === directions[1]) return { x, y: y - i } // up
     if (direction === directions[2]) return { x: x + i, y } // right
     if (direction === directions[3]) return { x, y: y + i } // down
-}
-
-function equals({ x: ax, y: ay }, { x: bx, y: by }) {
-    return ax === bx && ay === by
-}
-
-function isIn(line, point) {
-    return line.some((part) => equals(part, point))
 }
 
 function random(i = 7) {
