@@ -12,9 +12,11 @@ function Game () {
             memory = Memory()
             block = Block()
             block.init()
+            start.apply(this)
             return this
-        },
+        }
     }
+    function start() { }
 }
 
 // modules  ===================================================================
