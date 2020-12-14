@@ -1,23 +1,9 @@
-// game =======================================================================
+// main =======================================================================
 
 function Game () {
     return {
         init: () => Memory() // TODO
     }
-}
-
-// listeners  =================================================================
-
-function listen(block){
-    document.addEventListener(
-        "keydown",
-        ({ code }) => {
-            if (!code.includes('Arrow')) return
-            block.render('white')
-            block.move(code.replace('Arrow','').toLocaleLowerCase())
-            block.render()
-        },
-    )
 }
 
 // modules  ===================================================================
@@ -63,7 +49,19 @@ function Memory (rows = height / length) {
     function isFull(line){
         return memory[line].length >= width / length
     }
+}
 
+function Listener(block){
+    const keyHandler = ({ code }) => {
+        if (!code.includes('Arrow')) return
+        block.render('white')
+        block.move(code.replace('Arrow','').toLocaleLowerCase())
+        block.render()
+    }
+    return {
+        start: () => document.addEventListener("keydown",keyHandler),
+        stop: () => document.removeEventListener("keydown",keyHandler)
+    }
 }
 
 // models  ====================================================================
@@ -71,6 +69,7 @@ function Memory (rows = height / length) {
 function Block (){
     let figure = figures[random()]
     let head = coordinates(cell('?',0))
+    let listener
     return {
         get: function (_figure = figure, _head = head) {
             return _figure.map(p => new Object({
@@ -93,6 +92,14 @@ function Block (){
                 figure = _figure
                 head = _head
             }
+        },
+        init: function () {
+            this.render()
+            listener = Listener(this)
+            listener.start()
+        },
+        stop: function() {
+            listener.stop()
         }
     }
 }
