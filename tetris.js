@@ -3,25 +3,36 @@
 function Game () {
     let memory
     let block
+    let interval
     return {
         init: function () {
-            if(block){
-                block.stop()
-            }
             clear()
             memory = Memory()
-            block = Block()
-            block.init()
-            start.apply(this)
+            play()
             return this
         }
     }
-    function start() { }
+    function play (speed = 400) {
+        if(block){
+            block.stop()
+        }
+        block = Block()
+        block.init(memory)
+        interval = setInterval(() => {
+            if(block.fall()) return
+            block.flush()
+            clearInterval(interval)
+            if(memory.isOver()) return
+            let lines = memory.clean()
+            lines.forEach(line => memory.fall(line))
+            return play(speed < 100 ? speed : speed - speed * 1 / 54)
+        },speed)
+    }
 }
 
 // modules  ===================================================================
 
-function Memory (rows = height / length) {
+function Memory (rows = (height / length) -1) {
     memory = {}
     while(rows >= 0){
         memory[rows] = []
@@ -29,7 +40,7 @@ function Memory (rows = height / length) {
     }
     return {
         push: function (block) {
-            block.forEach(p => memory[p.y].push(p))
+            block.get().forEach(p => memory[p.y].push(p))
         },
         clean: function () {
             let lines = []
@@ -45,17 +56,28 @@ function Memory (rows = height / length) {
             return lines.sort((a,b) => b-a)
         },
         fall: function (line) {
-            Object.keys(memory).filter(y => y<line)
+            Object.keys(memory).filter(y => y<=line)
                 .sort((a,b) => b-a)
                 .forEach((y) => {
                     memory[y].forEach(p => {
                         render('white',cell(p.x,p.y))
                         p.y += 1
                         render(p.color,cell(p.x,p.y),true)
-                        memory[parseInt(y)+1].push(p)
+                        memory[p.y].push(p)
                     })
                     memory[y] = []
                 })
+        },
+        clash: function (block) {
+            let lines = block.map(p => p.y)
+            return lines.some(y => {
+                let cells = memory[y].map(p => p.x)
+                return block.filter(p => p.y === y)
+                    .some(p => cells.includes(p.x))
+            })
+        },
+        isOver: function () {
+            return memory[0].length > 0
         }
     }
     function isFull(line){
@@ -82,6 +104,7 @@ function Block (){
     let figure = figures[random()]
     let head = coordinates(cell('?',0))
     let listener
+    let memory
     return {
         get: function (_figure = figure, _head = head) {
             return _figure.map(p => new Object({
@@ -100,18 +123,32 @@ function Block (){
         move: function (where) {
             let _figure = where === 'up' ? transform(figure) : figure
             let _head = where === 'up' ? head : shift(head,where)
-            if(inBorders(this.get(_figure,_head))){
+            if(inBorders(this.get(_figure,_head)) &&
+            !memory.clash(this.get(_figure,_head))){
                 figure = _figure
                 head = _head
+                return true
             }
+            return false
         },
-        init: function () {
+        fall: function () {
+            this.render('white')
+            let a = this.move('down')
+            this.render()
+            return a
+        },
+        init: function (_memory) {
+            memory = _memory
             this.render()
             listener = Listener(this)
             listener.start()
         },
         stop: function() {
             listener.stop()
+        },
+        flush() {
+            this.stop()
+            memory.push(this)
         }
     }
 }
