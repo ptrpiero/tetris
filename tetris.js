@@ -1,8 +1,19 @@
 // main =======================================================================
 
 function Game () {
+    let memory
+    let block
     return {
-        init: () => Memory() // TODO
+        init: function () {
+            if(block){
+                block.stop()
+            }
+            clear()
+            memory = Memory()
+            block = Block()
+            block.init()
+            return this
+        },
     }
 }
 
@@ -43,8 +54,7 @@ function Memory (rows = height / length) {
                     })
                     memory[y] = []
                 })
-        },
-        get:() => memory
+        }
     }
     function isFull(line){
         return memory[line].length >= width / length
@@ -155,6 +165,10 @@ function render(
     }
 }
 
+function clear() {
+    render('white',{x:0,y:0,l:height})
+}
+
 function cell(x, y) {
     let randomXy = random(width / length)
     if(randomXy + 3 > (width / length)) return cell(x,y)
@@ -185,7 +199,7 @@ function random(i = figures.length) {
 
 // run ========================================================================
 
-Game().init()
+let game = Game().init()
 
 
 
