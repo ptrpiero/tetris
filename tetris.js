@@ -50,22 +50,23 @@ function Memory (rows = (height / length) -1) {
                     memory[y].forEach(p => {
                         render('white',cell(p.x,p.y))
                     })
+                    memory[y] = []
                 }
             })
-            lines.forEach(y => memory[y] = [])
             return lines.sort((a,b) => b-a)
         },
         fall: function (line) {
             Object.keys(memory).filter(y => y<=line)
                 .sort((a,b) => b-a)
                 .forEach((y) => {
-                    memory[y].forEach(p => {
+                    points = memory[y]
+                    memory[y] = []
+                    points.forEach(p => {
                         render('white',cell(p.x,p.y))
                         p.y += 1
                         render(p.color,cell(p.x,p.y),true)
                         memory[p.y].push(p)
                     })
-                    memory[y] = []
                 })
         },
         clash: function (block) {
