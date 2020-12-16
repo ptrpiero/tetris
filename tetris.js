@@ -18,15 +18,15 @@ function Game () {
         }
         block = Block()
         block.init(memory)
-        interval = setInterval(() => {
-            if(block.fall()) return
-            block.flush()
-            clearInterval(interval)
-            if(memory.isOver()) return
-            let lines = memory.clean()
-            lines.forEach(line => memory.fall(line))
-            return play(speed < 100 ? speed : speed - speed * 1 / 54)
-        },speed)
+        interval = setInterval(timeHandler,speed,block,memory,speed)
+    }
+    function timeHandler(block,memory,speed) {
+        if(block.fall()) return
+        block.flush()
+        clearInterval(interval)
+        if(memory.isOver()) return
+        memory.clean()
+        return play(speed < 100 ? speed : speed - speed * 1 / 54)
     }
 }
 
@@ -53,17 +53,17 @@ function Memory (rows = (height / length) -1) {
                     memory[y] = []
                 }
             })
-            return lines.sort((a,b) => b-a)
+            this.fall(Math.max(...lines),lines.length)
         },
-        fall: function (line) {
+        fall: function (line,height) {
             Object.keys(memory).filter(y => y<=line)
                 .sort((a,b) => b-a)
-                .forEach((y) => {
+                .forEach(y => {
                     points = memory[y]
                     memory[y] = []
                     points.forEach(p => {
                         render('white',cell(p.x,p.y))
-                        p.y += 1
+                        p.y += height
                         render(p.color,cell(p.x,p.y),true)
                         memory[p.y].push(p)
                     })
@@ -143,6 +143,7 @@ function Block (){
             this.render()
             listener = Listener(this)
             listener.start()
+            return this
         },
         stop: function() {
             listener.stop()
