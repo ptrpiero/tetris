@@ -191,11 +191,11 @@ function Block (){
 const figures = [
     {path:'**-**',color:'yellow'},      // O
     {path:'*--*--*--*',color:'cyan'},   // I
-    {path:'****',color:'orange'},       // L
+    {path:'--****',color:'orange'},     // L
+    {path:'*--***',color:'blue'},       // J
     {path:'-*-***',color:'purple'},     // T
-    {path:'-****-',color:'green'},      // Z
-    {path:'**--**',color:'blue'},       // S
-    {path:'--****',color:'red'}         // J
+    {path:'-****-',color:'green'},      // S
+    {path:'**--**',color:'red'}         // Z
 ].map(figure => figure.path
     .split('')
     .map((chunck,i) => {
