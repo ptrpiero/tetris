@@ -123,7 +123,7 @@ function Listener(block){
 
 function Block (){
     let figure = figures[random()]
-    let head = coordinates(cell('?',0))
+    let head = { x: random(width / length - size(figure).w + 1), y: 0 }
     let listener
     let memory
     return {
@@ -135,11 +135,7 @@ function Block (){
             }))
         },
         render: function (color) {
-            this.get().forEach(p => {
-                if(!p) return
-                let stroke = !color ? true : false
-                render(color || p.color,cell(p.x,p.y),stroke)
-            })
+            this.get().forEach(p => render(color || p.color,cell(p.x,p.y),!color))
         },
         move: function (where) {
             if(where === 'up') return this.rotate()
@@ -248,20 +244,7 @@ function clear() {
 }
 
 function cell(x, y) {
-    let randomXy = random(width / length)
-    if(randomXy + 3 > (width / length)) return cell(x,y)
-    return {
-        x: isNaN(x) ? randomXy * length : x * length,
-        y: isNaN(y) ? randomXy * length : y * length,
-        l: length
-    }
-}
-
-function coordinates({ x, y }) {
-    return {
-        x: Math.floor(x / length),
-        y: Math.floor(y / length)
-    }
+    return { x: x * length, y: y * length, l: length }
 }
 
 function shift({ x, y }, direction, i = 1) {
