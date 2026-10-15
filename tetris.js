@@ -22,6 +22,10 @@ function Game () {
             clear()
             Input(command)
             window.addEventListener('resize', redraw)
+            window.addEventListener('orientationchange', redraw)
+            document.addEventListener('visibilitychange', () => {
+                if(document.hidden) pause()
+            })
             show()
             return this
         },
@@ -144,6 +148,7 @@ function Game () {
         clear()
         if(memory) memory.render()
         if(block) block.render()
+        if(next) renderNext(next)
     }
 }
 
@@ -362,16 +367,26 @@ function fitBoard() {
     width = columns * length
     height = rows * length
     const board = document.getElementById('board')
-    board.width = width
-    board.height = height
+    scale(board, width, height)
+}
+
+// sharp rendering on high-density screens: draw in css pixels on a
+// backing store of devicePixelRatio times the size
+function scale(canvas, w, h) {
+    const ratio = window.devicePixelRatio || 1
+    canvas.width = Math.round(w * ratio)
+    canvas.height = Math.round(h * ratio)
+    canvas.style.width = `${w}px`
+    canvas.style.height = `${h}px`
+    canvas.getContext('2d').setTransform(ratio, 0, 0, ratio, 0, 0)
 }
 
 function renderNext(block) {
     const preview = document.getElementById('next')
+    const l = 12
+    scale(preview, 4 * l, 4 * l)
     const canvas = preview.getContext('2d')
-    const l = preview.width / 4
     const { w, h } = size(block.shape())
-    canvas.clearRect(0, 0, preview.width, preview.height)
     block.shape().forEach(p => render(p.color, {
         x: (p.x + (4 - w) / 2) * l,
         y: (p.y + (4 - h) / 2) * l,
