@@ -69,6 +69,7 @@ function Game () {
     function over () {
         clearTimeout(timer)
         state = 'over'
+        vibrate(200)
         show()
         return false
     }
@@ -97,6 +98,7 @@ function Game () {
             stats.lines += cleared
             stats.level = 1 + Math.floor(stats.lines / 10)
             addScore(lineScores[cleared] * stats.level)
+            vibrate(30)
         }
         if(memory.isOver()) return over()
         return spawn()
@@ -240,6 +242,70 @@ function Input(command) {
         button.blur()
         command(button.dataset.command)
     })
+    Gestures(document.getElementById('board'), command)
+    document.querySelectorAll('#controls button').forEach(button => {
+        let timer
+        const stop = () => clearTimeout(timer)
+        button.addEventListener('pointerdown', event => {
+            event.preventDefault()
+            const name = button.dataset.control
+            command(name)
+            if(!repeatable.includes(name)) return
+            // auto-repeat while held
+            const repeat = delay => {
+                timer = setTimeout(() => {
+                    command(name)
+                    repeat(60)
+                }, delay)
+            }
+            repeat(200)
+        })
+        ;['pointerup', 'pointerleave', 'pointercancel'].forEach(type => {
+            button.addEventListener(type, stop)
+        })
+        button.addEventListener('contextmenu', event => event.preventDefault())
+    })
+}
+
+// tap: rotate, drag: move one column per cell dragged, drag down: soft
+// drop, fast flick down: hard drop
+function Gestures(surface, command) {
+    let drag
+    const steps = distance => Math.trunc(distance / length)
+    surface.addEventListener('pointerdown', event => {
+        if(event.pointerType === 'mouse' || !event.isPrimary) return
+        surface.setPointerCapture(event.pointerId)
+        drag = {
+            x: event.clientX,
+            y: event.clientY,
+            time: event.timeStamp,
+            columns: 0,
+            rows: 0
+        }
+    })
+    surface.addEventListener('pointermove', event => {
+        if(!drag || !event.isPrimary) return
+        const x = steps(event.clientX - drag.x)
+        const y = steps(event.clientY - drag.y)
+        for(; drag.columns < x; drag.columns++) command('right')
+        for(; drag.columns > x; drag.columns--) command('left')
+        for(; drag.rows < y; drag.rows++) command('softDrop')
+    })
+    surface.addEventListener('pointerup', event => {
+        if(!drag || !event.isPrimary) return
+        const dx = event.clientX - drag.x
+        const dy = event.clientY - drag.y
+        const velocity = dy / Math.max(1, event.timeStamp - drag.time)
+        if(!drag.columns && !drag.rows && Math.hypot(dx, dy) < length){
+            command('rotate')
+        } else if(dy > 2 * length && dy > Math.abs(dx) && velocity > 1){
+            command('hardDrop')
+        }
+        drag = undefined
+    })
+    surface.addEventListener('pointercancel', () => {
+        drag = undefined
+    })
 }
 
 // models  ====================================================================
@@ -379,6 +445,10 @@ function scale(canvas, w, h) {
     canvas.style.width = `${w}px`
     canvas.style.height = `${h}px`
     canvas.getContext('2d').setTransform(ratio, 0, 0, ratio, 0, 0)
+}
+
+function vibrate(duration) {
+    if(navigator.vibrate) navigator.vibrate(duration)
 }
 
 function renderNext(block) {

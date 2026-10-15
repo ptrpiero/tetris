@@ -82,6 +82,36 @@
         #overlay h2, #overlay p {
             margin: 0;
         }
+        #controls {
+            display: none;
+            gap: 8px;
+            padding: 8px;
+        }
+        #controls button {
+            flex: 1;
+            min-height: 56px;
+            font-size: 24px;
+        }
+        @media (pointer: coarse) {
+            #controls {
+                display: flex;
+            }
+            #keys {
+                display: none;
+            }
+        }
+        @media (max-width: 480px) {
+            #hud {
+                gap: 4px 10px;
+            }
+            .stat {
+                min-width: 2.5em;
+            }
+            #hud button {
+                padding: 6px 8px;
+                font-size: 14px;
+            }
+        }
         #keys {
             margin: 0;
             padding: 0 8px 8px;
@@ -110,6 +140,13 @@
             </div>
         </div>
     </main>
+    <nav id="controls">
+        <button data-control="left" aria-label="Move left">◀</button>
+        <button data-control="right" aria-label="Move right">▶</button>
+        <button data-control="softDrop" aria-label="Soft drop">▼</button>
+        <button data-control="hardDrop" aria-label="Hard drop">⤓</button>
+        <button data-control="rotate" aria-label="Rotate">⟳</button>
+    </nav>
     <p id="keys">← → move · ↑ rotate · ↓ soft drop · Space hard drop · P pause · Enter start</p>
     <script src="tetris.js"></script>
 </body>

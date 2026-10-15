@@ -11,3 +11,5 @@ Controls:
 - P or Esc: pause / resume
 - Enter: start / play again
 
+On touch screens: tap the board to rotate, drag sideways to move, drag down to soft drop, flick down to hard drop, or use the buttons below the board.
+
