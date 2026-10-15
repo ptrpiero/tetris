@@ -29,8 +29,8 @@ function Game () {
         if(block.fall()) return
         block.flush()
         clearInterval(interval)
-        if(memory.isOver()) return
         memory.clean()
+        if(memory.isOver()) return
         return play(speed < 100 ? speed : speed - speed * 1 / 54)
     }
 }
