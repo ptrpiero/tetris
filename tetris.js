@@ -1,3 +1,5 @@
+'use strict'
+
 // main =======================================================================
 
 function Game () {
@@ -33,7 +35,7 @@ function Game () {
 // modules  ===================================================================
 
 function Memory (rows = (height / length) -1) {
-    memory = {}
+    const memory = {}
     while(rows >= 0){
         memory[rows] = []
         rows--
