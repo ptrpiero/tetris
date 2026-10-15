@@ -2,53 +2,164 @@
 
 // main =======================================================================
 
+const columns = 12
+const rows = 24
+let length, width, height
+
+// points for 1-4 lines cleared at once, multiplied by the level
+const lineScores = [0, 100, 300, 500, 800]
+
 function Game () {
     let memory
     let block
-    let interval
+    let next
+    let timer
+    let stats
+    let state = 'ready'
     return {
         init: function () {
+            fitBoard()
             clear()
-            memory = Memory()
-            play()
+            Input(command)
             window.addEventListener('resize', redraw)
+            window.addEventListener('orientationchange', redraw)
+            document.addEventListener('visibilitychange', () => {
+                if(document.hidden) pause()
+            })
+            show()
             return this
+        },
+        command
+    }
+    function command (name) {
+        if(name === 'start') return state === 'ready' || state === 'over' ? start() : undefined
+        if(name === 'restart') return start()
+        if(name === 'pause') return state === 'paused' ? resume() : pause()
+        if(state !== 'running') return
+        if(name === 'left' || name === 'right') return act(name)
+        if(name === 'rotate') return act('up')
+        if(name === 'softDrop') return act('down') && addScore(1)
+        if(name === 'hardDrop') return hardDrop()
+    }
+    function start () {
+        clearTimeout(timer)
+        memory = Memory()
+        block = undefined
+        next = Block()
+        stats = { score: 0, lines: 0, level: 1 }
+        clear()
+        updateStats()
+        state = 'running'
+        show()
+        spawn()
+        schedule()
+    }
+    function pause () {
+        if(state !== 'running') return
+        clearTimeout(timer)
+        state = 'paused'
+        show()
+    }
+    function resume () {
+        if(state !== 'paused') return
+        state = 'running'
+        show()
+        schedule()
+    }
+    function over () {
+        clearTimeout(timer)
+        state = 'over'
+        vibrate(200)
+        show()
+        return false
+    }
+    function spawn () {
+        const candidate = next
+        next = Block()
+        renderNext(next)
+        // game over: no room to spawn the next piece
+        if(memory.clash(candidate.get())) return over()
+        block = candidate.init(memory)
+        return true
+    }
+    function schedule () {
+        clearTimeout(timer)
+        timer = setTimeout(step, speed())
+    }
+    function step () {
+        if(!act('down') && !lock()) return
+        schedule()
+    }
+    // returns false when the game is over
+    function lock () {
+        block.flush()
+        const cleared = memory.clean()
+        if(cleared){
+            stats.lines += cleared
+            stats.level = 1 + Math.floor(stats.lines / 10)
+            addScore(lineScores[cleared] * stats.level)
+            vibrate(30)
         }
+        if(memory.isOver()) return over()
+        return spawn()
+    }
+    function act (where) {
+        block.render('white')
+        const moved = block.move(where)
+        block.render()
+        return moved
+    }
+    function hardDrop () {
+        block.render('white')
+        const distance = block.drop()
+        block.render()
+        addScore(2 * distance)
+        if(lock()) schedule()
+    }
+    function speed () {
+        return Math.max(100, Math.round(400 * 0.85 ** (stats.level - 1)))
+    }
+    function addScore (points) {
+        stats.score += points
+        updateStats()
+    }
+    function updateStats () {
+        Object.keys(stats).forEach(key => {
+            document.getElementById(key).textContent = stats[key]
+        })
+    }
+    function show () {
+        const screens = {
+            ready: { title: 'Tetris', action: 'Start', command: 'start' },
+            paused: { title: 'Paused', action: 'Resume', command: 'pause' },
+            over: { title: 'Game over', action: 'Play again', command: 'start' }
+        }
+        const screen = screens[state]
+        const overlay = document.getElementById('overlay')
+        overlay.hidden = !screen
+        document.getElementById('pause').textContent = state === 'paused' ? 'Resume' : 'Pause'
+        if(!screen) return
+        overlay.querySelector('h2').textContent = screen.title
+        overlay.querySelector('p').textContent = state === 'over' ? `Score ${stats.score}` : ''
+        const button = overlay.querySelector('button')
+        button.textContent = screen.action
+        button.dataset.command = screen.command
     }
     function redraw () {
         fitBoard()
         clear()
-        memory.render()
+        if(memory) memory.render()
         if(block) block.render()
-    }
-    function play (speed = 400) {
-        if(block){
-            block.stop()
-        }
-        const next = Block()
-        // game over: no room to spawn the next piece
-        if(memory.clash(next.get())) return
-        block = next
-        block.init(memory)
-        interval = setInterval(timeHandler,speed,block,memory,speed)
-    }
-    function timeHandler(block,memory,speed) {
-        if(block.fall()) return
-        block.flush()
-        clearInterval(interval)
-        memory.clean()
-        if(memory.isOver()) return
-        return play(speed < 100 ? speed : speed - speed * 1 / 54)
+        if(next) renderNext(next)
     }
 }
 
 // modules  ===================================================================
 
-function Memory (rows = (height / length) -1) {
+function Memory () {
     const memory = {}
-    while(rows >= 0){
-        memory[rows] = []
-        rows--
+    for(let y = 0; y < rows; y++){
+        memory[y] = []
     }
     return {
         push: function (block) {
@@ -56,7 +167,7 @@ function Memory (rows = (height / length) -1) {
         },
         clean: function () {
             let lines = Object.keys(memory).map(Number).filter(isFull)
-            if(!lines.length) return
+            if(!lines.length) return 0
             lines.forEach(y => {
                 memory[y].forEach(p => {
                     render('white',cell(p.x,p.y))
@@ -64,6 +175,7 @@ function Memory (rows = (height / length) -1) {
                 memory[y] = []
             })
             this.fall(lines)
+            return lines.length
         },
         fall: function (lines) {
             // each row drops by the number of cleared lines below it
@@ -99,32 +211,108 @@ function Memory (rows = (height / length) -1) {
         }
     }
     function isFull(line){
-        return memory[line].length >= width / length
+        return memory[line].length >= columns
     }
 }
 
-function Listener(block){
-    const keyHandler = event => {
-        const { code } = event
-        if (!code.includes('Arrow')) return
-        // arrow keys would otherwise scroll the page
+function Input(command) {
+    const keys = {
+        ArrowLeft: 'left',
+        ArrowRight: 'right',
+        ArrowUp: 'rotate',
+        ArrowDown: 'softDrop',
+        Space: 'hardDrop',
+        KeyP: 'pause',
+        Escape: 'pause',
+        Enter: 'start'
+    }
+    const repeatable = ['left', 'right', 'softDrop']
+    document.addEventListener('keydown', event => {
+        const name = keys[event.code]
+        if(!name) return
+        // arrow keys and space would otherwise scroll the page
         event.preventDefault()
-        block.render('white')
-        block.move(code.replace('Arrow','').toLocaleLowerCase())
-        block.render()
-    }
-    return {
-        start: () => document.addEventListener("keydown",keyHandler),
-        stop: () => document.removeEventListener("keydown",keyHandler)
-    }
+        if(event.repeat && !repeatable.includes(name)) return
+        command(name)
+    })
+    document.addEventListener('click', event => {
+        const button = event.target.closest('button[data-command]')
+        if(!button) return
+        // keep Space/Enter for the game instead of re-pressing the button
+        button.blur()
+        command(button.dataset.command)
+    })
+    Gestures(document.getElementById('board'), command)
+    document.querySelectorAll('#controls button').forEach(button => {
+        let timer
+        const stop = () => clearTimeout(timer)
+        button.addEventListener('pointerdown', event => {
+            event.preventDefault()
+            const name = button.dataset.control
+            command(name)
+            if(!repeatable.includes(name)) return
+            // auto-repeat while held
+            const repeat = delay => {
+                timer = setTimeout(() => {
+                    command(name)
+                    repeat(60)
+                }, delay)
+            }
+            repeat(200)
+        })
+        ;['pointerup', 'pointerleave', 'pointercancel'].forEach(type => {
+            button.addEventListener(type, stop)
+        })
+        button.addEventListener('contextmenu', event => event.preventDefault())
+    })
+}
+
+// tap: rotate, drag: move one column per cell dragged, drag down: soft
+// drop, fast flick down: hard drop
+function Gestures(surface, command) {
+    let drag
+    const steps = distance => Math.trunc(distance / length)
+    surface.addEventListener('pointerdown', event => {
+        if(event.pointerType === 'mouse' || !event.isPrimary) return
+        surface.setPointerCapture(event.pointerId)
+        drag = {
+            x: event.clientX,
+            y: event.clientY,
+            time: event.timeStamp,
+            columns: 0,
+            rows: 0
+        }
+    })
+    surface.addEventListener('pointermove', event => {
+        if(!drag || !event.isPrimary) return
+        const x = steps(event.clientX - drag.x)
+        const y = steps(event.clientY - drag.y)
+        for(; drag.columns < x; drag.columns++) command('right')
+        for(; drag.columns > x; drag.columns--) command('left')
+        for(; drag.rows < y; drag.rows++) command('softDrop')
+    })
+    surface.addEventListener('pointerup', event => {
+        if(!drag || !event.isPrimary) return
+        const dx = event.clientX - drag.x
+        const dy = event.clientY - drag.y
+        const velocity = dy / Math.max(1, event.timeStamp - drag.time)
+        if(!drag.columns && !drag.rows && Math.hypot(dx, dy) < length){
+            command('rotate')
+        } else if(dy > 2 * length && dy > Math.abs(dx) && velocity > 1){
+            command('hardDrop')
+        }
+        drag = undefined
+    })
+    surface.addEventListener('pointercancel', () => {
+        drag = undefined
+    })
 }
 
 // models  ====================================================================
 
 function Block (){
     let figure = figures[random()]
-    let head = coordinates(cell('?',0))
-    let listener
+    let head = { x: random(columns - size(figure).w + 1), y: 0 }
     let memory
     return {
         get: function (_figure = figure, _head = head) {
@@ -135,11 +323,7 @@ function Block (){
             }))
         },
         render: function (color) {
-            this.get().forEach(p => {
-                if(!p) return
-                let stroke = !color ? true : false
-                render(color || p.color,cell(p.x,p.y),stroke)
-            })
+            this.get().forEach(p => render(color || p.color,cell(p.x,p.y),!color))
         },
         move: function (where) {
             if(where === 'up') return this.rotate()
@@ -165,24 +349,20 @@ function Block (){
             head = _head
             return true
         },
-        fall: function () {
-            this.render('white')
-            let a = this.move('down')
-            this.render()
-            return a
+        drop: function () {
+            let distance = 0
+            while(this.move('down')) distance++
+            return distance
+        },
+        shape: function () {
+            return figure
         },
         init: function (_memory) {
             memory = _memory
             this.render()
-            listener = Listener(this)
-            listener.start()
             return this
         },
-        stop: function() {
-            listener.stop()
-        },
         flush() {
-            this.stop()
             memory.push(this)
         }
     }
@@ -191,11 +371,11 @@ function Block (){
 const figures = [
     {path:'**-**',color:'yellow'},      // O
     {path:'*--*--*--*',color:'cyan'},   // I
-    {path:'****',color:'orange'},       // L
+    {path:'--****',color:'orange'},     // L
+    {path:'*--***',color:'blue'},       // J
     {path:'-*-***',color:'purple'},     // T
-    {path:'-****-',color:'green'},      // Z
-    {path:'**--**',color:'blue'},       // S
-    {path:'--****',color:'red'}         // J
+    {path:'-****-',color:'green'},      // S
+    {path:'**--**',color:'red'}         // Z
 ].map(figure => figure.path
     .split('')
     .map((chunck,i) => {
@@ -210,11 +390,7 @@ const figures = [
 // utils ======================================================================
 
 function inBorders(figure) {
-    return figure.every(p => {
-        let {x,y} = cell(p.x,p.y)
-        return x >= 0 && x + length <= width
-            && y >= 0 && y + length <= height
-    })
+    return figure.every(p => p.x >= 0 && p.x < columns && p.y >= 0 && p.y < rows)
 }
 
 function transform(figure) {
@@ -232,9 +408,9 @@ function size(figure) {
 function render(
         color = 'white',
         { x, y, l } = { x: 0, y: 0, l: length },
-        stroke
+        stroke,
+        canvas = document.getElementById('board').getContext('2d')
     ) {
-    const canvas = document.getElementById('board').getContext('2d')
     canvas.fillStyle = color
     canvas.fillRect(x, y, l, l)
     if(stroke){
@@ -247,21 +423,49 @@ function clear() {
     render('white',{x:0,y:0,l:height})
 }
 
-function cell(x, y) {
-    let randomXy = random(width / length)
-    if(randomXy + 3 > (width / length)) return cell(x,y)
-    return {
-        x: isNaN(x) ? randomXy * length : x * length,
-        y: isNaN(y) ? randomXy * length : y * length,
-        l: length
-    }
+function fitBoard() {
+    const stage = document.getElementById('stage')
+    // minus the canvas border
+    length = Math.max(1, Math.floor(Math.min(
+        (stage.clientWidth - 2) / columns,
+        (stage.clientHeight - 2) / rows
+    )))
+    width = columns * length
+    height = rows * length
+    const board = document.getElementById('board')
+    scale(board, width, height)
 }
 
-function coordinates({ x, y }) {
-    return {
-        x: Math.floor(x / length),
-        y: Math.floor(y / length)
-    }
+// sharp rendering on high-density screens: draw in css pixels on a
+// backing store of devicePixelRatio times the size
+function scale(canvas, w, h) {
+    const ratio = window.devicePixelRatio || 1
+    canvas.width = Math.round(w * ratio)
+    canvas.height = Math.round(h * ratio)
+    canvas.style.width = `${w}px`
+    canvas.style.height = `${h}px`
+    canvas.getContext('2d').setTransform(ratio, 0, 0, ratio, 0, 0)
+}
+
+function vibrate(duration) {
+    if(navigator.vibrate) navigator.vibrate(duration)
+}
+
+function renderNext(block) {
+    const preview = document.getElementById('next')
+    const l = 12
+    scale(preview, 4 * l, 4 * l)
+    const canvas = preview.getContext('2d')
+    const { w, h } = size(block.shape())
+    block.shape().forEach(p => render(p.color, {
+        x: (p.x + (4 - w) / 2) * l,
+        y: (p.y + (4 - h) / 2) * l,
+        l
+    }, true, canvas))
+}
+
+function cell(x, y) {
+    return { x: x * length, y: y * length, l: length }
 }
 
 function shift({ x, y }, direction, i = 1) {
@@ -277,7 +481,7 @@ function random(i = figures.length) {
 
 // run ========================================================================
 
-let game = Game().init()
+const game = Game().init()
 
 
 
