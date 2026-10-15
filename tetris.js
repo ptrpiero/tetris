@@ -93,8 +93,11 @@ function Memory (rows = (height / length) -1) {
 }
 
 function Listener(block){
-    const keyHandler = ({ code }) => {
+    const keyHandler = event => {
+        const { code } = event
         if (!code.includes('Arrow')) return
+        // arrow keys would otherwise scroll the page
+        event.preventDefault()
         block.render('white')
         block.move(code.replace('Arrow','').toLocaleLowerCase())
         block.render()
