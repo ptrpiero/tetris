@@ -43,27 +43,28 @@ function Memory (rows = (height / length) -1) {
             block.get().forEach(p => memory[p.y].push(p))
         },
         clean: function () {
-            let lines = []
-            Object.keys(memory).forEach(y => {
-                if(isFull(y)){
-                    lines.push(parseInt(y))
-                    memory[y].forEach(p => {
-                        render('white',cell(p.x,p.y))
-                    })
-                    memory[y] = []
-                }
+            let lines = Object.keys(memory).map(Number).filter(isFull)
+            if(!lines.length) return
+            lines.forEach(y => {
+                memory[y].forEach(p => {
+                    render('white',cell(p.x,p.y))
+                })
+                memory[y] = []
             })
-            this.fall(Math.max(...lines),lines.length)
+            this.fall(lines)
         },
-        fall: function (line,height) {
-            Object.keys(memory).filter(y => y<=line)
+        fall: function (lines) {
+            // each row drops by the number of cleared lines below it
+            Object.keys(memory).map(Number)
                 .sort((a,b) => b-a)
                 .forEach(y => {
-                    points = memory[y]
+                    const count = lines.filter(line => line > y).length
+                    if(!count) return
+                    const points = memory[y]
                     memory[y] = []
                     points.forEach(p => {
                         render('white',cell(p.x,p.y))
-                        p.y += height
+                        p.y += count
                         render(p.color,cell(p.x,p.y),true)
                         memory[p.y].push(p)
                     })
