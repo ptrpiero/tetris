@@ -128,15 +128,28 @@ function Block (){
             })
         },
         move: function (where) {
-            let _figure = where === 'up' ? transform(figure) : figure
-            let _head = where === 'up' ? head : shift(head,where)
-            if(inBorders(this.get(_figure,_head)) &&
-            !memory.clash(this.get(_figure,_head))){
-                figure = _figure
-                head = _head
-                return true
+            if(where === 'up') return this.rotate()
+            return this.place(figure,shift(head,where))
+        },
+        rotate: function () {
+            const _figure = transform(figure)
+            const from = size(figure)
+            const to = size(_figure)
+            // keep the bounding-box center in place
+            const _head = {
+                x: head.x + Math.trunc((from.w - to.w) / 2),
+                y: Math.max(0, head.y + Math.trunc((from.h - to.h) / 2))
             }
-            return false
+            // wall kicks
+            return [0, -1, 1, -2, 2]
+                .some(kick => this.place(_figure,shift(_head,'right',kick)))
+        },
+        place: function (_figure, _head) {
+            const points = this.get(_figure,_head)
+            if(!inBorders(points) || memory.clash(points)) return false
+            figure = _figure
+            head = _head
+            return true
         },
         fall: function () {
             this.render('white')
@@ -191,11 +204,15 @@ function inBorders(figure) {
 }
 
 function transform(figure) {
-        return figure.map(p => {
-            let x = p.y
-            let y = -p.x
-            return {x,y,color:p.color}
-        })
+    const { w } = size(figure)
+    return figure.map(p => ({ x: p.y, y: w - 1 - p.x, color: p.color }))
+}
+
+function size(figure) {
+    return {
+        w: Math.max(...figure.map(p => p.x)) + 1,
+        h: Math.max(...figure.map(p => p.y)) + 1
+    }
 }
 
 function render(
