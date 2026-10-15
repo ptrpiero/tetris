@@ -1,3 +1,5 @@
+'use strict'
+
 // main =======================================================================
 
 function Game () {
@@ -9,14 +11,24 @@ function Game () {
             clear()
             memory = Memory()
             play()
+            window.addEventListener('resize', redraw)
             return this
         }
+    }
+    function redraw () {
+        fitBoard()
+        clear()
+        memory.render()
+        if(block) block.render()
     }
     function play (speed = 400) {
         if(block){
             block.stop()
         }
-        block = Block()
+        const next = Block()
+        // game over: no room to spawn the next piece
+        if(memory.clash(next.get())) return
+        block = next
         block.init(memory)
         interval = setInterval(timeHandler,speed,block,memory,speed)
     }
@@ -24,8 +36,8 @@ function Game () {
         if(block.fall()) return
         block.flush()
         clearInterval(interval)
-        if(memory.isOver()) return
         memory.clean()
+        if(memory.isOver()) return
         return play(speed < 100 ? speed : speed - speed * 1 / 54)
     }
 }
@@ -33,7 +45,7 @@ function Game () {
 // modules  ===================================================================
 
 function Memory (rows = (height / length) -1) {
-    memory = {}
+    const memory = {}
     while(rows >= 0){
         memory[rows] = []
         rows--
@@ -43,27 +55,28 @@ function Memory (rows = (height / length) -1) {
             block.get().forEach(p => memory[p.y].push(p))
         },
         clean: function () {
-            let lines = []
-            Object.keys(memory).forEach(y => {
-                if(isFull(y)){
-                    lines.push(parseInt(y))
-                    memory[y].forEach(p => {
-                        render('white',cell(p.x,p.y))
-                    })
-                    memory[y] = []
-                }
+            let lines = Object.keys(memory).map(Number).filter(isFull)
+            if(!lines.length) return
+            lines.forEach(y => {
+                memory[y].forEach(p => {
+                    render('white',cell(p.x,p.y))
+                })
+                memory[y] = []
             })
-            this.fall(Math.max(...lines),lines.length)
+            this.fall(lines)
         },
-        fall: function (line,height) {
-            Object.keys(memory).filter(y => y<=line)
+        fall: function (lines) {
+            // each row drops by the number of cleared lines below it
+            Object.keys(memory).map(Number)
                 .sort((a,b) => b-a)
                 .forEach(y => {
-                    points = memory[y]
+                    const count = lines.filter(line => line > y).length
+                    if(!count) return
+                    const points = memory[y]
                     memory[y] = []
                     points.forEach(p => {
                         render('white',cell(p.x,p.y))
-                        p.y += height
+                        p.y += count
                         render(p.color,cell(p.x,p.y),true)
                         memory[p.y].push(p)
                     })
@@ -79,6 +92,10 @@ function Memory (rows = (height / length) -1) {
         },
         isOver: function () {
             return memory[0].length > 0
+        },
+        render: function () {
+            Object.values(memory).flat()
+                .forEach(p => render(p.color,cell(p.x,p.y),true))
         }
     }
     function isFull(line){
@@ -87,8 +104,11 @@ function Memory (rows = (height / length) -1) {
 }
 
 function Listener(block){
-    const keyHandler = ({ code }) => {
+    const keyHandler = event => {
+        const { code } = event
         if (!code.includes('Arrow')) return
+        // arrow keys would otherwise scroll the page
+        event.preventDefault()
         block.render('white')
         block.move(code.replace('Arrow','').toLocaleLowerCase())
         block.render()
@@ -122,15 +142,28 @@ function Block (){
             })
         },
         move: function (where) {
-            let _figure = where === 'up' ? transform(figure) : figure
-            let _head = where === 'up' ? head : shift(head,where)
-            if(inBorders(this.get(_figure,_head)) &&
-            !memory.clash(this.get(_figure,_head))){
-                figure = _figure
-                head = _head
-                return true
+            if(where === 'up') return this.rotate()
+            return this.place(figure,shift(head,where))
+        },
+        rotate: function () {
+            const _figure = transform(figure)
+            const from = size(figure)
+            const to = size(_figure)
+            // keep the bounding-box center in place
+            const _head = {
+                x: head.x + Math.trunc((from.w - to.w) / 2),
+                y: Math.max(0, head.y + Math.trunc((from.h - to.h) / 2))
             }
-            return false
+            // wall kicks
+            return [0, -1, 1, -2, 2]
+                .some(kick => this.place(_figure,shift(_head,'right',kick)))
+        },
+        place: function (_figure, _head) {
+            const points = this.get(_figure,_head)
+            if(!inBorders(points) || memory.clash(points)) return false
+            figure = _figure
+            head = _head
+            return true
         },
         fall: function () {
             this.render('white')
@@ -185,11 +218,15 @@ function inBorders(figure) {
 }
 
 function transform(figure) {
-        return figure.map(p => {
-            let x = p.y
-            let y = -p.x
-            return {x,y,color:p.color}
-        })
+    const { w } = size(figure)
+    return figure.map(p => ({ x: p.y, y: w - 1 - p.x, color: p.color }))
+}
+
+function size(figure) {
+    return {
+        w: Math.max(...figure.map(p => p.x)) + 1,
+        h: Math.max(...figure.map(p => p.y)) + 1
+    }
 }
 
 function render(
