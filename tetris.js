@@ -18,7 +18,10 @@ function Game () {
         if(block){
             block.stop()
         }
-        block = Block()
+        const next = Block()
+        // game over: no room to spawn the next piece
+        if(memory.clash(next.get())) return
+        block = next
         block.init(memory)
         interval = setInterval(timeHandler,speed,block,memory,speed)
     }
