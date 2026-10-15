@@ -11,8 +11,15 @@ function Game () {
             clear()
             memory = Memory()
             play()
+            window.addEventListener('resize', redraw)
             return this
         }
+    }
+    function redraw () {
+        fitBoard()
+        clear()
+        memory.render()
+        if(block) block.render()
     }
     function play (speed = 400) {
         if(block){
@@ -85,6 +92,10 @@ function Memory (rows = (height / length) -1) {
         },
         isOver: function () {
             return memory[0].length > 0
+        },
+        render: function () {
+            Object.values(memory).flat()
+                .forEach(p => render(p.color,cell(p.x,p.y),true))
         }
     }
     function isFull(line){
